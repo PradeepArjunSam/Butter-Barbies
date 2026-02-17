@@ -7,6 +7,8 @@ import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Browse from './pages/Browse'
+import Upload from './pages/Upload'
+import ResourceDetail from './pages/ResourceDetail'
 import './index.css'
 
 export default function App() {
@@ -16,16 +18,17 @@ export default function App() {
         {/* Fixed WebGL background */}
         <div className="light-pillar-bg">
           <LightPillar
-            topColor="#5227FF"
-            bottomColor="#FF9FFC"
-            intensity={0.8}
-            rotationSpeed={0.2}
-            glowAmount={0.004}
-            pillarWidth={3.5}
-            pillarHeight={0.35}
-            noiseIntensity={0.4}
+            topColor="#1a3a8a"
+            bottomColor="#2563eb"
+            intensity={0.35}
+            rotationSpeed={0.15}
+            glowAmount={0.008}
+            pillarWidth={8.0}
+            pillarHeight={0.25}
+            noiseIntensity={0.3}
             quality="high"
             mixBlendMode="screen"
+            pillarRotation={-25}
           />
         </div>
 
@@ -50,6 +53,8 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/browse" element={<Browse />} />
+            <Route path="/upload" element={<Upload />} />
+            <Route path="/resource/:id" element={<ResourceDetail />} />
           </Routes>
         </div>
       </AuthProvider>

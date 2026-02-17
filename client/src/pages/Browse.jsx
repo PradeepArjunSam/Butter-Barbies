@@ -1,64 +1,156 @@
-import { Search, Filter } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabaseClient'
+import ResourceCard from '../components/ResourceCard'
+import { Search, Filter, Loader } from 'lucide-react'
 
 export default function Browse() {
-    return (
-        <div className="browse-page">
-            <div className="browse-header">
-                <h1>Browse Resources</h1>
-                <p>Find notes, past papers, and assignments by subject or semester</p>
-            </div>
+  const [resources, setResources] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filters, setFilters] = useState({
+    subject: '',
+    semester: '',
+    type: '',
+    sort: 'newest',
+  })
 
-            <div className="browse-toolbar">
-                <div className="search-box">
-                    <Search size={18} className="search-icon" />
-                    <input
-                        type="text"
-                        className="input-field search-input"
-                        placeholder="Search by title, subject, or keyword..."
-                    />
-                </div>
-                <div className="filter-group">
-                    <select className="input-field filter-select">
-                        <option value="">All Subjects</option>
-                        <option value="data-structures">Data Structures</option>
-                        <option value="dbms">DBMS</option>
-                        <option value="os">Operating Systems</option>
-                        <option value="cn">Computer Networks</option>
-                        <option value="maths">Mathematics</option>
-                    </select>
-                    <select className="input-field filter-select">
-                        <option value="">All Semesters</option>
-                        <option value="1">Semester 1</option>
-                        <option value="2">Semester 2</option>
-                        <option value="3">Semester 3</option>
-                        <option value="4">Semester 4</option>
-                        <option value="5">Semester 5</option>
-                        <option value="6">Semester 6</option>
-                        <option value="7">Semester 7</option>
-                        <option value="8">Semester 8</option>
-                    </select>
-                    <select className="input-field filter-select">
-                        <option value="">All Types</option>
-                        <option value="NOTES">Notes</option>
-                        <option value="PAST_PAPER">Past Paper</option>
-                        <option value="REFERENCE_BOOK">Reference Book</option>
-                        <option value="ASSIGNMENT">Assignment</option>
-                        <option value="PROJECT_REPORT">Project Report</option>
-                    </select>
-                    <select className="input-field filter-select">
-                        <option value="newest">Newest First</option>
-                        <option value="downloads">Most Downloaded</option>
-                    </select>
-                </div>
-            </div>
+  useEffect(() => {
+    fetchResources()
+  }, [filters])
 
-            <div className="browse-empty">
-                <Filter size={48} className="empty-icon" />
-                <h3>No resources yet</h3>
-                <p>Resources will appear here once the backend is connected and data is seeded.</p>
-            </div>
+  const fetchResources = async () => {
+    setLoading(true)
+    try {
+      let query = supabase
+        .from('resources')
+        .select('*, uploader:profiles!uploader_id(id, name, department, points)')
 
-            <style>{`
+      if (filters.subject) query = query.eq('subject', filters.subject)
+      if (filters.semester) query = query.eq('semester', parseInt(filters.semester))
+      if (filters.type) query = query.eq('type', filters.type)
+
+      if (filters.sort === 'newest') {
+        query = query.order('created_at', { ascending: false })
+      } else if (filters.sort === 'downloads') {
+        query = query.order('download_count', { ascending: false })
+      }
+
+      query = query.limit(50)
+
+      const { data, error } = await query
+      if (error) throw error
+      setResources(data || [])
+    } catch (err) {
+      console.error('Browse fetch error:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleFilterChange = (e) => {
+    setFilters({ ...filters, [e.target.name]: e.target.value })
+  }
+
+  const handleSearch = (e) => {
+    e.preventDefault()
+    if (!searchQuery.trim()) {
+      fetchResources()
+      return
+    }
+    searchResources()
+  }
+
+  const searchResources = async () => {
+    setLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('resources')
+        .select('*, uploader:profiles!uploader_id(id, name, department, points)')
+        .or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,subject.ilike.%${searchQuery}%`)
+        .order('created_at', { ascending: false })
+        .limit(50)
+
+      if (error) throw error
+      setResources(data || [])
+    } catch (err) {
+      console.error('Search error:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const filteredResources = resources
+
+  return (
+    <div className="browse-page">
+      <div className="browse-header">
+        <h1>Browse Resources</h1>
+        <p>Find notes, past papers, and assignments by subject or semester</p>
+      </div>
+
+      <div className="browse-toolbar">
+        <form className="search-box" onSubmit={handleSearch}>
+          <Search size={18} className="search-icon" />
+          <input
+            type="text"
+            className="input-field search-input"
+            placeholder="Search by title, subject, or keyword..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </form>
+        <div className="filter-group">
+          <select name="subject" className="input-field filter-select" value={filters.subject} onChange={handleFilterChange}>
+            <option value="">All Subjects</option>
+            <option value="Data Structures">Data Structures</option>
+            <option value="DBMS">DBMS</option>
+            <option value="Operating Systems">Operating Systems</option>
+            <option value="Computer Networks">Computer Networks</option>
+            <option value="Mathematics">Mathematics</option>
+            <option value="Digital Electronics">Digital Electronics</option>
+            <option value="OOP">OOP</option>
+            <option value="Software Engineering">Software Engineering</option>
+            <option value="Machine Learning">Machine Learning</option>
+            <option value="Web Development">Web Development</option>
+          </select>
+          <select name="semester" className="input-field filter-select" value={filters.semester} onChange={handleFilterChange}>
+            <option value="">All Semesters</option>
+            {[1, 2, 3, 4, 5, 6, 7, 8].map(n => <option key={n} value={n}>Semester {n}</option>)}
+          </select>
+          <select name="type" className="input-field filter-select" value={filters.type} onChange={handleFilterChange}>
+            <option value="">All Types</option>
+            <option value="NOTES">Notes</option>
+            <option value="PAST_PAPER">Past Paper</option>
+            <option value="REFERENCE_BOOK">Reference Book</option>
+            <option value="ASSIGNMENT">Assignment</option>
+            <option value="PROJECT_REPORT">Project Report</option>
+          </select>
+          <select name="sort" className="input-field filter-select" value={filters.sort} onChange={handleFilterChange}>
+            <option value="newest">Newest First</option>
+            <option value="downloads">Most Downloaded</option>
+          </select>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="browse-loading">
+          <Loader size={32} className="spinner" />
+        </div>
+      ) : filteredResources.length > 0 ? (
+        <div className="browse-grid">
+          {filteredResources.map(resource => (
+            <ResourceCard key={resource.id} resource={resource} />
+          ))}
+        </div>
+      ) : (
+        <div className="browse-empty">
+          <Filter size={48} className="empty-icon" />
+          <h3>No resources found</h3>
+          <p>Try adjusting your filters or search terms, or be the first to upload!</p>
+        </div>
+      )}
+
+      <style>{`
         .browse-page {
           padding-top: 88px;
           max-width: 1100px;
@@ -115,6 +207,16 @@ export default function Browse() {
           padding: 10px 16px;
           font-size: 13px;
         }
+        .browse-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+          gap: 16px;
+        }
+        .browse-loading {
+          display: flex;
+          justify-content: center;
+          padding: 80px;
+        }
         .browse-empty {
           display: flex;
           flex-direction: column;
@@ -139,7 +241,13 @@ export default function Browse() {
           color: var(--text-muted);
           max-width: 400px;
         }
+        .spinner {
+          animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
       `}</style>
-        </div>
-    )
+    </div>
+  )
 }
