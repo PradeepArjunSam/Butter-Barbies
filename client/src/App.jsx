@@ -9,6 +9,8 @@ import Register from './pages/Register'
 import Browse from './pages/Browse'
 import Upload from './pages/Upload'
 import ResourceDetail from './pages/ResourceDetail'
+import Profile from './pages/Profile'
+import Leaderboard from './pages/Leaderboard'
 import './index.css'
 
 export default function App() {
@@ -55,6 +57,8 @@ export default function App() {
             <Route path="/browse" element={<Browse />} />
             <Route path="/upload" element={<Upload />} />
             <Route path="/resource/:id" element={<ResourceDetail />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/leaderboard" element={<Leaderboard />} />
           </Routes>
         </div>
       </AuthProvider>

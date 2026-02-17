@@ -4,90 +4,97 @@ import { BookOpen, Upload, User, LogOut, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 
 export default function Navbar() {
-    const { user, signOut, isAuthenticated } = useAuth()
-    const navigate = useNavigate()
-    const [mobileOpen, setMobileOpen] = useState(false)
+  const { user, signOut, isAuthenticated } = useAuth()
+  const navigate = useNavigate()
+  const [mobileOpen, setMobileOpen] = useState(false)
 
-    const handleSignOut = async () => {
-        await signOut()
-        navigate('/login')
-        setMobileOpen(false)
-    }
+  const handleSignOut = async () => {
+    await signOut()
+    navigate('/login')
+    setMobileOpen(false)
+  }
 
-    return (
-        <nav className="navbar">
-            <div className="navbar-inner">
-                <Link to="/" className="navbar-brand" onClick={() => setMobileOpen(false)}>
-                    <div className="brand-icon">
-                        <BookOpen size={20} />
-                    </div>
-                    <span className="brand-text">
-                        Campus<span className="gradient-text">Share</span>
-                    </span>
-                </Link>
+  return (
+    <nav className="navbar">
+      <div className="navbar-inner">
+        <Link to="/" className="navbar-brand" onClick={() => setMobileOpen(false)}>
+          <div className="brand-icon">
+            <BookOpen size={20} />
+          </div>
+          <span className="brand-text">
+            Campus<span className="gradient-text">Share</span>
+          </span>
+        </Link>
 
-                <button
-                    className="mobile-toggle"
-                    onClick={() => setMobileOpen(!mobileOpen)}
-                    aria-label="Toggle menu"
-                >
-                    {mobileOpen ? <X size={22} /> : <Menu size={22} />}
-                </button>
+        <button
+          className="mobile-toggle"
+          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label="Toggle menu"
+        >
+          {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
 
-                <div className={`navbar-links ${mobileOpen ? 'open' : ''}`}>
-                    <Link
-                        to="/browse"
-                        className="nav-link"
-                        onClick={() => setMobileOpen(false)}
-                    >
-                        Browse
-                    </Link>
+        <div className={`navbar-links ${mobileOpen ? 'open' : ''}`}>
+          <Link
+            to="/browse"
+            className="nav-link"
+            onClick={() => setMobileOpen(false)}
+          >
+            Browse
+          </Link>
+          <Link
+            to="/leaderboard"
+            className="nav-link"
+            onClick={() => setMobileOpen(false)}
+          >
+            Leaderboard
+          </Link>
 
-                    {isAuthenticated ? (
-                        <>
-                            <Link
-                                to="/upload"
-                                className="nav-link upload-link"
-                                onClick={() => setMobileOpen(false)}
-                            >
-                                <Upload size={16} />
-                                Upload
-                            </Link>
-                            <Link
-                                to="/profile"
-                                className="nav-link"
-                                onClick={() => setMobileOpen(false)}
-                            >
-                                <User size={16} />
-                                Profile
-                            </Link>
-                            <button className="nav-signout" onClick={handleSignOut}>
-                                <LogOut size={16} />
-                                Sign Out
-                            </button>
-                        </>
-                    ) : (
-                        <>
-                            <Link
-                                to="/login"
-                                className="nav-link"
-                                onClick={() => setMobileOpen(false)}
-                            >
-                                Sign In
-                            </Link>
-                            <Link
-                                to="/register"
-                                className="btn-primary nav-cta"
-                                onClick={() => setMobileOpen(false)}
-                            >
-                                Get Started
-                            </Link>
-                        </>
-                    )}
-                </div>
-            </div>
+          {isAuthenticated ? (
+            <>
+              <Link
+                to="/upload"
+                className="nav-link upload-link"
+                onClick={() => setMobileOpen(false)}
+              >
+                <Upload size={16} />
+                Upload
+              </Link>
+              <Link
+                to="/profile"
+                className="nav-link"
+                onClick={() => setMobileOpen(false)}
+              >
+                <User size={16} />
+                Profile
+              </Link>
+              <button className="nav-signout" onClick={handleSignOut}>
+                <LogOut size={16} />
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="nav-link"
+                onClick={() => setMobileOpen(false)}
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/register"
+                className="btn-primary nav-cta"
+                onClick={() => setMobileOpen(false)}
+              >
+                Get Started
+              </Link>
+            </>
+          )}
+        </div>
+      </div>
 
-            <style>{`
+      <style>{`
         .navbar {
           position: fixed;
           top: 0;
@@ -223,6 +230,6 @@ export default function Navbar() {
           }
         }
       `}</style>
-        </nav>
-    )
+    </nav>
+  )
 }
