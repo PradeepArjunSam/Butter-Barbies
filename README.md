@@ -20,6 +20,30 @@ Academic resources on campus are fragmented:
 
 **CampusShare** bridges this gap with a platform built *by students, for students*.
 
+## Project Status
+
+### ✅ Phase 1: Foundation (Complete)
+- [x] Project scaffolding (React + Vite + Tailwind)
+- [x] Supabase Auth integration
+- [x] Responsive Glassmorphism UI
+- [x] Fixed WebGL Background (LightPillar)
+
+### ✅ Phase 2: Core Resources (Complete)
+- [x] **Upload System**: Drag-and-drop file upload to Supabase Storage with metadata.
+- [x] **Browse Page**: Filter by subject, semester, and type. Search functionality.
+- [x] **Resource Details**: PDF preview, download tracking, and star ratings.
+- [x] **Backend Integration**: Real-time data with Supabase Database.
+
+### ✅ Phase 3: Community & Gamification (Complete)
+- [x] **User Profiles**: Track uploads, downloads, and points.
+- [x] **Leaderboard**: Top contributors ranked by engagement points.
+- [x] **Gamification**: +10 points for uploads, +2 for downloads (to uploader), +1 for ratings.
+
+### 🚧 Phase 4: Polish & Deploy (In Progress)
+- [ ] Final UI/UX refinements
+- [ ] Performance optimization
+- [ ] Deployment to Vercel/Netlify
+
 ---
 
 ## Key Features
