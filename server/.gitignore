@@ -1,0 +1,7 @@
+node_modules
+# Keep environment variables out of version control
+# .env (Uncomment if you want to ignore it, currently shared per request)
+# .env
+
+
+/generated/prisma
