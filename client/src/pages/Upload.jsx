@@ -6,281 +6,281 @@ import { Upload as UploadIcon, FileText, X, Loader, CheckCircle } from 'lucide-r
 import toast from 'react-hot-toast'
 
 const SUBJECTS = [
-    'Data Structures', 'DBMS', 'Operating Systems', 'Computer Networks',
-    'Mathematics', 'Digital Electronics', 'OOP', 'Software Engineering',
-    'Machine Learning', 'Web Development', 'Other'
+  'Data Structures', 'DBMS', 'Operating Systems', 'Computer Networks',
+  'Mathematics', 'Digital Electronics', 'OOP', 'Software Engineering',
+  'Machine Learning', 'Web Development', 'Other'
 ]
 
 const RESOURCE_TYPES = [
-    { value: 'NOTES', label: 'Notes' },
-    { value: 'PAST_PAPER', label: 'Past Paper' },
-    { value: 'REFERENCE_BOOK', label: 'Reference Book' },
-    { value: 'PROJECT_REPORT', label: 'Project Report' },
-    { value: 'ASSIGNMENT', label: 'Assignment' },
+  { value: 'NOTES', label: 'Notes' },
+  { value: 'PAST_PAPER', label: 'Past Paper' },
+  { value: 'REFERENCE_BOOK', label: 'Reference Book' },
+  { value: 'PROJECT_REPORT', label: 'Project Report' },
+  { value: 'ASSIGNMENT', label: 'Assignment' },
 ]
 
 export default function UploadPage() {
-    const { user, isAuthenticated } = useAuth()
-    const navigate = useNavigate()
-    const [loading, setLoading] = useState(false)
-    const [uploadProgress, setUploadProgress] = useState(0)
-    const [file, setFile] = useState(null)
-    const [form, setForm] = useState({
-        title: '',
-        description: '',
-        subject: '',
-        semester: '',
-        year: '',
-        type: 'NOTES',
-        tags: '',
-    })
+  const { user, isAuthenticated } = useAuth()
+  const navigate = useNavigate()
+  const [loading, setLoading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [file, setFile] = useState(null)
+  const [form, setForm] = useState({
+    title: '',
+    description: '',
+    subject: '',
+    semester: '',
+    year: '',
+    type: 'NOTES',
+    tags: '',
+  })
 
-    if (!isAuthenticated) {
-        return (
-            <div className="upload-page">
-                <div className="upload-auth-wall">
-                    <UploadIcon size={48} className="auth-wall-icon" />
-                    <h2>Sign in to upload</h2>
-                    <p>You need to be logged in to share resources with the community.</p>
-                    <button className="btn-primary" onClick={() => navigate('/login')}>Sign In</button>
-                </div>
-                <style>{uploadStyles}</style>
-            </div>
-        )
-    }
-
-    const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value })
-    }
-
-    const handleFileChange = (e) => {
-        const selected = e.target.files[0]
-        if (selected) {
-            if (selected.size > 25 * 1024 * 1024) {
-                toast.error('File size must be under 25MB')
-                return
-            }
-            setFile(selected)
-        }
-    }
-
-    const removeFile = () => setFile(null)
-
-    const handleSubmit = async (e) => {
-        e.preventDefault()
-        if (!file) return toast.error('Please select a file')
-        if (!form.title.trim()) return toast.error('Title is required')
-        if (!form.subject) return toast.error('Subject is required')
-        if (!form.semester) return toast.error('Semester is required')
-
-        setLoading(true)
-        setUploadProgress(10)
-
-        try {
-            // 1. Upload file to Supabase Storage
-            const fileExt = file.name.split('.').pop()
-            const filePath = `${user.id}/${Date.now()}-${file.name}`
-
-            setUploadProgress(30)
-
-            const { data: storageData, error: storageError } = await supabase.storage
-                .from('resources')
-                .upload(filePath, file, { cacheControl: '3600', upsert: false })
-
-            if (storageError) throw storageError
-
-            setUploadProgress(60)
-
-            // 2. Get public URL
-            const { data: urlData } = supabase.storage
-                .from('resources')
-                .getPublicUrl(filePath)
-
-            const fileUrl = urlData.publicUrl
-
-            setUploadProgress(80)
-
-            // 3. Insert resource record
-            const { error: insertError } = await supabase.from('resources').insert({
-                title: form.title.trim(),
-                description: form.description.trim() || null,
-                type: form.type,
-                subject: form.subject,
-                semester: parseInt(form.semester),
-                year: parseInt(form.year) || new Date().getFullYear(),
-                file_url: fileUrl,
-                file_name: file.name,
-                file_size: file.size,
-                tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
-                uploader_id: user.id,
-            })
-
-            if (insertError) throw insertError
-
-            setUploadProgress(100)
-            toast.success('Resource uploaded! +10 points 🎉')
-
-            setTimeout(() => navigate('/browse'), 1200)
-        } catch (err) {
-            console.error('Upload error:', err)
-            toast.error(err.message || 'Upload failed')
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    const formatFileSize = (bytes) => {
-        if (bytes < 1024) return bytes + ' B'
-        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
-        return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
-    }
-
+  if (!isAuthenticated) {
     return (
-        <div className="upload-page">
-            <div className="upload-container">
-                <div className="upload-header">
-                    <h1>Upload Resource</h1>
-                    <p>Share your notes, past papers, or assignments with the campus community</p>
-                </div>
-
-                <form onSubmit={handleSubmit} className="upload-form">
-                    {/* Title */}
-                    <div className="form-group">
-                        <label className="form-label">Title *</label>
-                        <input
-                            type="text"
-                            name="title"
-                            className="input-field"
-                            placeholder="e.g. Data Structures Notes — Trees & Graphs"
-                            value={form.title}
-                            onChange={handleChange}
-                            required
-                        />
-                    </div>
-
-                    {/* Description */}
-                    <div className="form-group">
-                        <label className="form-label">Description</label>
-                        <textarea
-                            name="description"
-                            className="input-field upload-textarea"
-                            placeholder="Brief description of what's in this resource..."
-                            value={form.description}
-                            onChange={handleChange}
-                            rows={3}
-                        />
-                    </div>
-
-                    {/* Subject + Semester row */}
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label className="form-label">Subject *</label>
-                            <select name="subject" className="input-field" value={form.subject} onChange={handleChange} required>
-                                <option value="">Select subject</option>
-                                {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
-                            </select>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Semester *</label>
-                            <select name="semester" className="input-field" value={form.semester} onChange={handleChange} required>
-                                <option value="">Select</option>
-                                {[1, 2, 3, 4, 5, 6, 7, 8].map(n => <option key={n} value={n}>Semester {n}</option>)}
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Type + Year row */}
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label className="form-label">Resource Type</label>
-                            <select name="type" className="input-field" value={form.type} onChange={handleChange}>
-                                {RESOURCE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                            </select>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Year</label>
-                            <input
-                                type="number"
-                                name="year"
-                                className="input-field"
-                                placeholder={new Date().getFullYear()}
-                                value={form.year}
-                                onChange={handleChange}
-                                min={2015}
-                                max={2030}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Tags */}
-                    <div className="form-group">
-                        <label className="form-label">Tags (comma separated)</label>
-                        <input
-                            type="text"
-                            name="tags"
-                            className="input-field"
-                            placeholder="e.g. trees, algorithms, sorting"
-                            value={form.tags}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    {/* File Upload */}
-                    <div className="form-group">
-                        <label className="form-label">File * (max 25MB)</label>
-                        {!file ? (
-                            <label className="file-drop-zone" htmlFor="file-input">
-                                <UploadIcon size={32} className="drop-icon" />
-                                <span className="drop-text">Click to select a file</span>
-                                <span className="drop-hint">PDF, DOCX, PPT, ZIP — up to 25MB</span>
-                                <input
-                                    id="file-input"
-                                    type="file"
-                                    onChange={handleFileChange}
-                                    accept=".pdf,.doc,.docx,.ppt,.pptx,.zip,.rar,.txt,.md"
-                                    hidden
-                                />
-                            </label>
-                        ) : (
-                            <div className="file-preview">
-                                <FileText size={20} />
-                                <div className="file-info">
-                                    <span className="file-name">{file.name}</span>
-                                    <span className="file-size">{formatFileSize(file.size)}</span>
-                                </div>
-                                <button type="button" className="file-remove" onClick={removeFile}>
-                                    <X size={16} />
-                                </button>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Progress bar */}
-                    {loading && (
-                        <div className="progress-bar-container">
-                            <div className="progress-bar" style={{ width: `${uploadProgress}%` }} />
-                        </div>
-                    )}
-
-                    {/* Submit */}
-                    <button type="submit" className="btn-primary upload-submit" disabled={loading}>
-                        {loading ? (
-                            <>
-                                <Loader size={16} className="spinner" />
-                                Uploading... {uploadProgress}%
-                            </>
-                        ) : (
-                            <>
-                                <UploadIcon size={16} />
-                                Upload Resource (+10 pts)
-                            </>
-                        )}
-                    </button>
-                </form>
-            </div>
-            <style>{uploadStyles}</style>
+      <div className="upload-page">
+        <div className="upload-auth-wall">
+          <UploadIcon size={48} className="auth-wall-icon" />
+          <h2>Sign in to upload</h2>
+          <p>You need to be logged in to share resources with the community.</p>
+          <button className="btn-primary" onClick={() => navigate('/login')}>Sign In</button>
         </div>
+        <style>{uploadStyles}</style>
+      </div>
     )
+  }
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value })
+  }
+
+  const handleFileChange = (e) => {
+    const selected = e.target.files[0]
+    if (selected) {
+      if (selected.size > 25 * 1024 * 1024) {
+        toast.error('File size must be under 25MB')
+        return
+      }
+      setFile(selected)
+    }
+  }
+
+  const removeFile = () => setFile(null)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!file) return toast.error('Please select a file')
+    if (!form.title.trim()) return toast.error('Title is required')
+    if (!form.subject) return toast.error('Subject is required')
+    if (!form.semester) return toast.error('Semester is required')
+
+    setLoading(true)
+    setUploadProgress(10)
+
+    try {
+      // 1. Upload file to Supabase Storage
+      const fileExt = file.name.split('.').pop()
+      const filePath = `${user.id}/${Date.now()}-${file.name}`
+
+      setUploadProgress(30)
+
+      const { data: storageData, error: storageError } = await supabase.storage
+        .from('resource_files')
+        .upload(filePath, file, { cacheControl: '3600', upsert: false })
+
+      if (storageError) throw storageError
+
+      setUploadProgress(60)
+
+      // 2. Get public URL
+      const { data: urlData } = supabase.storage
+        .from('resource_files')
+        .getPublicUrl(filePath)
+
+      const fileUrl = urlData.publicUrl
+
+      setUploadProgress(80)
+
+      // 3. Insert resource record
+      const { error: insertError } = await supabase.from('resources').insert({
+        title: form.title.trim(),
+        description: form.description.trim() || null,
+        type: form.type,
+        subject: form.subject,
+        semester: parseInt(form.semester),
+        year: parseInt(form.year) || new Date().getFullYear(),
+        file_url: fileUrl,
+        file_name: file.name,
+        file_size: file.size,
+        tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+        uploader_id: user.id,
+      })
+
+      if (insertError) throw insertError
+
+      setUploadProgress(100)
+      toast.success('Resource uploaded! +10 points 🎉')
+
+      setTimeout(() => navigate('/browse'), 1200)
+    } catch (err) {
+      console.error('Upload error:', err)
+      toast.error(err.message || 'Upload failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const formatFileSize = (bytes) => {
+    if (bytes < 1024) return bytes + ' B'
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+  }
+
+  return (
+    <div className="upload-page">
+      <div className="upload-container">
+        <div className="upload-header">
+          <h1>Upload Resource</h1>
+          <p>Share your notes, past papers, or assignments with the campus community</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="upload-form">
+          {/* Title */}
+          <div className="form-group">
+            <label className="form-label">Title *</label>
+            <input
+              type="text"
+              name="title"
+              className="input-field"
+              placeholder="e.g. Data Structures Notes — Trees & Graphs"
+              value={form.title}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          {/* Description */}
+          <div className="form-group">
+            <label className="form-label">Description</label>
+            <textarea
+              name="description"
+              className="input-field upload-textarea"
+              placeholder="Brief description of what's in this resource..."
+              value={form.description}
+              onChange={handleChange}
+              rows={3}
+            />
+          </div>
+
+          {/* Subject + Semester row */}
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Subject *</label>
+              <select name="subject" className="input-field" value={form.subject} onChange={handleChange} required>
+                <option value="">Select subject</option>
+                {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Semester *</label>
+              <select name="semester" className="input-field" value={form.semester} onChange={handleChange} required>
+                <option value="">Select</option>
+                {[1, 2, 3, 4, 5, 6, 7, 8].map(n => <option key={n} value={n}>Semester {n}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Type + Year row */}
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Resource Type</label>
+              <select name="type" className="input-field" value={form.type} onChange={handleChange}>
+                {RESOURCE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Year</label>
+              <input
+                type="number"
+                name="year"
+                className="input-field"
+                placeholder={new Date().getFullYear()}
+                value={form.year}
+                onChange={handleChange}
+                min={2015}
+                max={2030}
+              />
+            </div>
+          </div>
+
+          {/* Tags */}
+          <div className="form-group">
+            <label className="form-label">Tags (comma separated)</label>
+            <input
+              type="text"
+              name="tags"
+              className="input-field"
+              placeholder="e.g. trees, algorithms, sorting"
+              value={form.tags}
+              onChange={handleChange}
+            />
+          </div>
+
+          {/* File Upload */}
+          <div className="form-group">
+            <label className="form-label">File * (max 25MB)</label>
+            {!file ? (
+              <label className="file-drop-zone" htmlFor="file-input">
+                <UploadIcon size={32} className="drop-icon" />
+                <span className="drop-text">Click to select a file</span>
+                <span className="drop-hint">PDF, DOCX, PPT, ZIP — up to 25MB</span>
+                <input
+                  id="file-input"
+                  type="file"
+                  onChange={handleFileChange}
+                  accept=".pdf,.doc,.docx,.ppt,.pptx,.zip,.rar,.txt,.md"
+                  hidden
+                />
+              </label>
+            ) : (
+              <div className="file-preview">
+                <FileText size={20} />
+                <div className="file-info">
+                  <span className="file-name">{file.name}</span>
+                  <span className="file-size">{formatFileSize(file.size)}</span>
+                </div>
+                <button type="button" className="file-remove" onClick={removeFile}>
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Progress bar */}
+          {loading && (
+            <div className="progress-bar-container">
+              <div className="progress-bar" style={{ width: `${uploadProgress}%` }} />
+            </div>
+          )}
+
+          {/* Submit */}
+          <button type="submit" className="btn-primary upload-submit" disabled={loading}>
+            {loading ? (
+              <>
+                <Loader size={16} className="spinner" />
+                Uploading... {uploadProgress}%
+              </>
+            ) : (
+              <>
+                <UploadIcon size={16} />
+                Upload Resource (+10 pts)
+              </>
+            )}
+          </button>
+        </form>
+      </div>
+      <style>{uploadStyles}</style>
+    </div>
+  )
 }
 
 const uploadStyles = `
