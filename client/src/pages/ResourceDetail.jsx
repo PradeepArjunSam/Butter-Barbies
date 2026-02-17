@@ -56,10 +56,11 @@ export default function ResourceDetail() {
     try {
       // Track download
       if (isAuthenticated) {
-        await supabase.from('downloads').insert({
+        const { error: dlError } = await supabase.from('downloads').insert({
           user_id: user.id,
           resource_id: resource.id,
         })
+        if (dlError) console.error('Download tracking error:', dlError)
 
         // Increment download count (Try via RPC, else fallback to update which might fail if not uploader)
         const { error: rpcError } = await supabase.rpc('increment_downloads', { row_id: resource.id })
