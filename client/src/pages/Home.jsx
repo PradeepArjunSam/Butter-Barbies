@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Search, Upload, Download, ArrowRight, BookOpen, FileText, Users } from 'lucide-react'
-import Prism from '../components/Prism'
 
 export default function Home() {
   const { isAuthenticated } = useAuth()
@@ -10,20 +9,6 @@ export default function Home() {
     <div className="home-page">
       {/* Hero */}
       <section className="hero">
-        <div className="hero-prism-bg">
-          <Prism
-            animationType="rotate"
-            glow={0.8}
-            noise={0.4}
-            scale={3.2}
-            hueShift={-0.3}
-            colorFrequency={1.2}
-            bloom={0.8}
-            timeScale={0.3}
-            transparent={true}
-          />
-        </div>
-        <div className="hero-prism-overlay" />
         <div className="hero-bg" />
         <div className="hero-content">
           <div className="hero-badge">
@@ -138,37 +123,10 @@ export default function Home() {
         .hero-bg {
           position: absolute;
           inset: 0;
-          background:
-            radial-gradient(ellipse at 20% 50%, rgba(108,92,231,0.15) 0%, transparent 50%),
-            radial-gradient(ellipse at 80% 20%, rgba(162,155,254,0.1) 0%, transparent 40%),
-            radial-gradient(ellipse at 50% 80%, rgba(108,92,231,0.08) 0%, transparent 50%);
-          pointer-events: none;
-        }
-        .hero-prism-bg {
-          position: absolute;
-          inset: 0;
-          z-index: 0;
-          opacity: 0.35;
-        }
-        .hero-prism-overlay {
-          position: absolute;
-          inset: 0;
-          z-index: 1;
-          background: radial-gradient(ellipse at center, transparent 30%, var(--bg-primary) 75%);
-          pointer-events: none;
-        }
-        .hero-bg {
-          position: absolute;
-          inset: 0;
-          z-index: 2;
-          background:
-            radial-gradient(ellipse at 20% 50%, rgba(108,92,231,0.1) 0%, transparent 50%),
-            radial-gradient(ellipse at 80% 20%, rgba(162,155,254,0.06) 0%, transparent 40%);
           pointer-events: none;
         }
         .hero-content {
           position: relative;
-          z-index: 3;
           max-width: 720px;
           text-align: center;
         }
@@ -224,8 +182,10 @@ export default function Home() {
           gap: 20px;
         }
         .feature-card {
-          background: var(--bg-card);
-          border: 1px solid var(--border-color);
+          background: rgba(26, 26, 37, 0.5);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.06);
           border-radius: var(--radius-lg);
           padding: 32px;
           transition: all 0.3s ease;
@@ -278,8 +238,10 @@ export default function Home() {
           gap: 16px;
         }
         .stat-block {
-          background: var(--bg-card);
-          border: 1px solid var(--border-color);
+          background: rgba(26, 26, 37, 0.5);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.06);
           border-radius: var(--radius-lg);
           padding: 28px 24px;
           text-align: center;
