@@ -6,7 +6,7 @@
 
 **Butter Barbies** is the team behind **CampusShare** — a community-driven academic resource sharing platform built for **Yugastra**, the annual university fest of **Ramaiah University**. This hackathon project tackles the problem of siloed study materials on campus.
 
-Students spend hours hunting for notes, past papers, and solved assignments that already exist somewhere. CampusShare changes that by creating a **trusted, searchable, campus-specific repository** where contributors are rewarded and seekers find what they need — fast.
+Students spend hours hunting for notes, past papers, and solved assignments that already exist somewhere. CampusShare changes that by creating a **trusted, searchable, campus-specific repository** where seekers find what they need — fast.
 
 ---
 
@@ -25,12 +25,11 @@ Academic resources on campus are fragmented:
 ## Key Features
 
 ### Must-Have (Core MVP)
-- User registration & login (JWT)
+- User registration & login (Supabase Auth)
 - Upload resources with metadata (subject, semester, type)
 - Browse & filter by subject / semester / type
 - Download resources
 - Keyword search
-- Contributor points & recognition
 - Resource detail pages
 
 ### Should-Have (High Value)
@@ -51,12 +50,13 @@ Academic resources on campus are fragmented:
 | Layer          | Technology                          |
 |---------------|-------------------------------------|
 | **Frontend**   | React + Vite + TailwindCSS        |
-| **Backend**    | Node.js + Express                 |
-| **Database**   | PostgreSQL + Prisma ORM           |
-| **File Storage** | Cloudinary (free tier)          |
-| **Auth**       | JWT + bcrypt                      |
+| **Backend**    | Supabase (BaaS)                   |
+| **ORM**        | Prisma ORM                        |
+| **Database**   | Supabase PostgreSQL               |
+| **File Storage** | Supabase Storage                |
+| **Auth**       | Supabase Auth                     |
 | **Search**     | PostgreSQL Full-Text Search       |
-| **Deployment** | Render.com / Railway.app          |
+| **Deployment** | Vercel (Frontend) + Supabase (Backend) |
 
 ---
 
@@ -69,34 +69,28 @@ Academic resources on campus are fragmented:
               |
               v
 +------------------------------+
-|     Express API Server       |
+|   Supabase Client SDK        |
 +-------------+----------------+
               |
               v
 +----------+----------+--------+
-| Auth     | Upload   | Search |
-| Service  | Service  | Service|
+| Auth     | Storage  | Search |
+| Service  | Service  | (DB)   |
 +----------+----------+--------+
               |
               v
-+-------------+----------------+
-| PostgreSQL  |   Cloudinary   |
-|  (Prisma)   | File Storage   |
-+-------------+----------------+
++------------------------------+
+|   Supabase PostgreSQL        |
+|       (Prisma ORM)           |
++------------------------------+
 ```
 
 ---
 
-## Points System
-
-| Action                          | Points |
-|--------------------------------|--------|
-| Upload a resource              | +10    |
-| Per download of your resource  | +2     |
-
----
-
 ## Team — Butter Barbies
+
+- **PradeepArjunSam** — Frontend & UI
+- **hemantsaini404** — Backend & Database
 
 Built for **Yugastra — Ramaiah University Fest**
 
