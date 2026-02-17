@@ -6,288 +6,292 @@ import { Download, Star, FileText, User, Calendar, HardDrive, Tag, ArrowLeft, Lo
 import toast from 'react-hot-toast'
 
 export default function ResourceDetail() {
-    const { id } = useParams()
-    const { user, isAuthenticated } = useAuth()
-    const [resource, setResource] = useState(null)
-    const [loading, setLoading] = useState(true)
-    const [downloading, setDownloading] = useState(false)
-    const [userRating, setUserRating] = useState(0)
-    const [hoverRating, setHoverRating] = useState(0)
-    const [ratingLoading, setRatingLoading] = useState(false)
+  const { id } = useParams()
+  const { user, isAuthenticated } = useAuth()
+  const [resource, setResource] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [downloading, setDownloading] = useState(false)
+  const [userRating, setUserRating] = useState(0)
+  const [hoverRating, setHoverRating] = useState(0)
+  const [ratingLoading, setRatingLoading] = useState(false)
 
-    useEffect(() => {
-        fetchResource()
-    }, [id])
+  useEffect(() => {
+    fetchResource()
+  }, [id])
 
-    const fetchResource = async () => {
-        setLoading(true)
-        try {
-            const { data, error } = await supabase
-                .from('resources')
-                .select('*, uploader:profiles!uploader_id(id, name, department, points)')
-                .eq('id', id)
-                .single()
+  const fetchResource = async () => {
+    setLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('resources')
+        .select('*, uploader:profiles!uploader_id(id, name, department, points)')
+        .eq('id', id)
+        .single()
 
-            if (error) throw error
-            setResource(data)
+      if (error) throw error
+      setResource(data)
 
-            // Fetch user's existing rating
-            if (user) {
-                const { data: ratingData } = await supabase
-                    .from('ratings')
-                    .select('score')
-                    .eq('resource_id', id)
-                    .eq('user_id', user.id)
-                    .single()
+      // Fetch user's existing rating
+      if (user) {
+        const { data: ratingData } = await supabase
+          .from('ratings')
+          .select('score')
+          .eq('resource_id', id)
+          .eq('user_id', user.id)
+          .single()
 
-                if (ratingData) setUserRating(ratingData.score)
-            }
-        } catch (err) {
-            console.error(err)
-            toast.error('Resource not found')
-        } finally {
-            setLoading(false)
+        if (ratingData) setUserRating(ratingData.score)
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error('Resource not found')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDownload = async () => {
+    if (!resource?.file_url) return
+    setDownloading(true)
+    try {
+      // Track download
+      if (isAuthenticated) {
+        await supabase.from('downloads').insert({
+          user_id: user.id,
+          resource_id: resource.id,
+        })
+
+        // Increment download count (Try via RPC, else fallback to update which might fail if not uploader)
+        const { error: rpcError } = await supabase.rpc('increment_downloads', { row_id: resource.id })
+
+        if (rpcError) {
+          await supabase
+            .from('resources')
+            .update({ download_count: (resource.download_count || 0) + 1 })
+            .eq('id', resource.id)
         }
+      }
+
+      // Open file URL
+      window.open(resource.file_url, '_blank')
+      toast.success('Download started!')
+      setResource(prev => ({ ...prev, download_count: (prev.download_count || 0) + 1 }))
+    } catch (err) {
+      console.error(err)
+      toast.error('Download failed')
+    } finally {
+      setDownloading(false)
     }
+  }
 
-    const handleDownload = async () => {
-        if (!resource?.file_url) return
-        setDownloading(true)
-        try {
-            // Track download
-            if (isAuthenticated) {
-                await supabase.from('downloads').insert({
-                    user_id: user.id,
-                    resource_id: resource.id,
-                })
+  const handleRate = async (score) => {
+    if (!isAuthenticated) return toast.error('Sign in to rate')
+    if (user.id === resource.uploader_id) return toast.error("You can't rate your own resource")
+    setRatingLoading(true)
+    try {
+      const { error } = await supabase.from('ratings').upsert({
+        user_id: user.id,
+        resource_id: resource.id,
+        score,
+      }, { onConflict: 'user_id,resource_id' })
 
-                // Increment download count
-                await supabase
-                    .from('resources')
-                    .update({ download_count: (resource.download_count || 0) + 1 })
-                    .eq('id', resource.id)
-            }
+      if (error) throw error
 
-            // Open file URL
-            window.open(resource.file_url, '_blank')
-            toast.success('Download started!')
-            setResource(prev => ({ ...prev, download_count: (prev.download_count || 0) + 1 }))
-        } catch (err) {
-            console.error(err)
-            toast.error('Download failed')
-        } finally {
-            setDownloading(false)
-        }
+      setUserRating(score)
+      toast.success(`Rated ${score} stars!`)
+
+      // Recalculate avg
+      const { data: ratings } = await supabase
+        .from('ratings')
+        .select('score')
+        .eq('resource_id', resource.id)
+
+      if (ratings?.length) {
+        const avg = ratings.reduce((a, b) => a + b.score, 0) / ratings.length
+        await supabase.from('resources').update({ avg_rating: avg }).eq('id', resource.id)
+        setResource(prev => ({ ...prev, avg_rating: avg }))
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error('Rating failed')
+    } finally {
+      setRatingLoading(false)
     }
+  }
 
-    const handleRate = async (score) => {
-        if (!isAuthenticated) return toast.error('Sign in to rate')
-        if (user.id === resource.uploader_id) return toast.error("You can't rate your own resource")
-        setRatingLoading(true)
-        try {
-            const { error } = await supabase.from('ratings').upsert({
-                user_id: user.id,
-                resource_id: resource.id,
-                score,
-            }, { onConflict: 'user_id,resource_id' })
+  const formatFileSize = (bytes) => {
+    if (!bytes) return '—'
+    if (bytes < 1024) return bytes + ' B'
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+  }
 
-            if (error) throw error
+  const typeLabels = {
+    NOTES: 'Notes', PAST_PAPER: 'Past Paper', REFERENCE_BOOK: 'Reference Book',
+    PROJECT_REPORT: 'Project Report', ASSIGNMENT: 'Assignment',
+  }
 
-            setUserRating(score)
-            toast.success(`Rated ${score} stars!`)
-
-            // Recalculate avg
-            const { data: ratings } = await supabase
-                .from('ratings')
-                .select('score')
-                .eq('resource_id', resource.id)
-
-            if (ratings?.length) {
-                const avg = ratings.reduce((a, b) => a + b.score, 0) / ratings.length
-                await supabase.from('resources').update({ avg_rating: avg }).eq('id', resource.id)
-                setResource(prev => ({ ...prev, avg_rating: avg }))
-            }
-        } catch (err) {
-            console.error(err)
-            toast.error('Rating failed')
-        } finally {
-            setRatingLoading(false)
-        }
-    }
-
-    const formatFileSize = (bytes) => {
-        if (!bytes) return '—'
-        if (bytes < 1024) return bytes + ' B'
-        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
-        return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
-    }
-
-    const typeLabels = {
-        NOTES: 'Notes', PAST_PAPER: 'Past Paper', REFERENCE_BOOK: 'Reference Book',
-        PROJECT_REPORT: 'Project Report', ASSIGNMENT: 'Assignment',
-    }
-
-    if (loading) {
-        return (
-            <div className="rd-page">
-                <div className="rd-loading"><Loader size={32} className="spinner" /></div>
-                <style>{rdStyles}</style>
-            </div>
-        )
-    }
-
-    if (!resource) {
-        return (
-            <div className="rd-page">
-                <div className="rd-not-found">
-                    <h2>Resource not found</h2>
-                    <Link to="/browse" className="btn-primary">Back to Browse</Link>
-                </div>
-                <style>{rdStyles}</style>
-            </div>
-        )
-    }
-
-    const isPDF = resource.file_name?.toLowerCase().endsWith('.pdf')
-
+  if (loading) {
     return (
-        <div className="rd-page">
-            <Link to="/browse" className="rd-back">
-                <ArrowLeft size={16} /> Back to Browse
-            </Link>
-
-            <div className="rd-layout">
-                {/* Main content */}
-                <div className="rd-main">
-                    <div className="rd-type-badge">
-                        <FileText size={14} />
-                        {typeLabels[resource.type] || resource.type}
-                    </div>
-
-                    <h1 className="rd-title">{resource.title}</h1>
-
-                    {resource.description && (
-                        <p className="rd-desc">{resource.description}</p>
-                    )}
-
-                    {/* Star Rating */}
-                    <div className="rd-rating-section">
-                        <span className="rd-rating-label">Rate this resource:</span>
-                        <div className="rd-stars">
-                            {[1, 2, 3, 4, 5].map(star => (
-                                <button
-                                    key={star}
-                                    className={`rd-star ${star <= (hoverRating || userRating) ? 'active' : ''}`}
-                                    onClick={() => handleRate(star)}
-                                    onMouseEnter={() => setHoverRating(star)}
-                                    onMouseLeave={() => setHoverRating(0)}
-                                    disabled={ratingLoading}
-                                >
-                                    <Star
-                                        size={22}
-                                        fill={star <= (hoverRating || userRating) ? 'var(--warning)' : 'none'}
-                                        stroke={star <= (hoverRating || userRating) ? 'var(--warning)' : 'var(--text-muted)'}
-                                    />
-                                </button>
-                            ))}
-                            {resource.avg_rating > 0 && (
-                                <span className="rd-avg-rating">{resource.avg_rating.toFixed(1)} avg</span>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* PDF Preview */}
-                    {isPDF && resource.file_url && (
-                        <div className="rd-preview">
-                            <iframe src={resource.file_url} title="PDF Preview" className="rd-pdf-frame" />
-                        </div>
-                    )}
-                </div>
-
-                {/* Sidebar */}
-                <div className="rd-sidebar">
-                    {/* Download card */}
-                    <div className="rd-sidebar-card">
-                        <button
-                            className="btn-primary rd-download-btn"
-                            onClick={handleDownload}
-                            disabled={downloading}
-                        >
-                            {downloading ? <Loader size={16} className="spinner" /> : <Download size={16} />}
-                            {downloading ? 'Downloading...' : 'Download'}
-                        </button>
-
-                        <div className="rd-stats">
-                            <div className="rd-stat-row">
-                                <Download size={14} />
-                                <span>{resource.download_count || 0} downloads</span>
-                            </div>
-                            <div className="rd-stat-row">
-                                <Star size={14} />
-                                <span>{resource.avg_rating > 0 ? `${resource.avg_rating.toFixed(1)} rating` : 'No ratings yet'}</span>
-                            </div>
-                            <div className="rd-stat-row">
-                                <HardDrive size={14} />
-                                <span>{formatFileSize(resource.file_size)}</span>
-                            </div>
-                            <div className="rd-stat-row">
-                                <Calendar size={14} />
-                                <span>{new Date(resource.created_at).toLocaleDateString()}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Meta info */}
-                    <div className="rd-sidebar-card">
-                        <h4>Details</h4>
-                        <div className="rd-meta-list">
-                            <div className="rd-meta-item">
-                                <span className="rd-meta-label">Subject</span>
-                                <span className="rd-meta-value">{resource.subject}</span>
-                            </div>
-                            <div className="rd-meta-item">
-                                <span className="rd-meta-label">Semester</span>
-                                <span className="rd-meta-value">{resource.semester}</span>
-                            </div>
-                            <div className="rd-meta-item">
-                                <span className="rd-meta-label">Year</span>
-                                <span className="rd-meta-value">{resource.year}</span>
-                            </div>
-                            <div className="rd-meta-item">
-                                <span className="rd-meta-label">File</span>
-                                <span className="rd-meta-value">{resource.file_name}</span>
-                            </div>
-                        </div>
-                        {resource.tags?.length > 0 && (
-                            <div className="rd-tags">
-                                {resource.tags.map(tag => (
-                                    <span key={tag} className="rd-tag"><Tag size={10} /> {tag}</span>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Uploader card */}
-                    {resource.uploader && (
-                        <div className="rd-sidebar-card rd-uploader-card">
-                            <div className="rd-uploader-avatar">
-                                <User size={20} />
-                            </div>
-                            <div className="rd-uploader-info">
-                                <span className="rd-uploader-name">{resource.uploader.name}</span>
-                                <span className="rd-uploader-dept">{resource.uploader.department || 'Student'}</span>
-                            </div>
-                            <div className="rd-uploader-points">
-                                <span className="rd-points-value">{resource.uploader.points || 0}</span>
-                                <span className="rd-points-label">pts</span>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
-            <style>{rdStyles}</style>
-        </div>
+      <div className="rd-page">
+        <div className="rd-loading"><Loader size={32} className="spinner" /></div>
+        <style>{rdStyles}</style>
+      </div>
     )
+  }
+
+  if (!resource) {
+    return (
+      <div className="rd-page">
+        <div className="rd-not-found">
+          <h2>Resource not found</h2>
+          <Link to="/browse" className="btn-primary">Back to Browse</Link>
+        </div>
+        <style>{rdStyles}</style>
+      </div>
+    )
+  }
+
+  const isPDF = resource.file_name?.toLowerCase().endsWith('.pdf')
+
+  return (
+    <div className="rd-page">
+      <Link to="/browse" className="rd-back">
+        <ArrowLeft size={16} /> Back to Browse
+      </Link>
+
+      <div className="rd-layout">
+        {/* Main content */}
+        <div className="rd-main">
+          <div className="rd-type-badge">
+            <FileText size={14} />
+            {typeLabels[resource.type] || resource.type}
+          </div>
+
+          <h1 className="rd-title">{resource.title}</h1>
+
+          {resource.description && (
+            <p className="rd-desc">{resource.description}</p>
+          )}
+
+          {/* Star Rating */}
+          <div className="rd-rating-section">
+            <span className="rd-rating-label">Rate this resource:</span>
+            <div className="rd-stars">
+              {[1, 2, 3, 4, 5].map(star => (
+                <button
+                  key={star}
+                  className={`rd-star ${star <= (hoverRating || userRating) ? 'active' : ''}`}
+                  onClick={() => handleRate(star)}
+                  onMouseEnter={() => setHoverRating(star)}
+                  onMouseLeave={() => setHoverRating(0)}
+                  disabled={ratingLoading}
+                >
+                  <Star
+                    size={22}
+                    fill={star <= (hoverRating || userRating) ? 'var(--warning)' : 'none'}
+                    stroke={star <= (hoverRating || userRating) ? 'var(--warning)' : 'var(--text-muted)'}
+                  />
+                </button>
+              ))}
+              {resource.avg_rating > 0 && (
+                <span className="rd-avg-rating">{resource.avg_rating.toFixed(1)} avg</span>
+              )}
+            </div>
+          </div>
+
+          {/* PDF Preview */}
+          {isPDF && resource.file_url && (
+            <div className="rd-preview">
+              <iframe src={resource.file_url} title="PDF Preview" className="rd-pdf-frame" />
+            </div>
+          )}
+        </div>
+
+        {/* Sidebar */}
+        <div className="rd-sidebar">
+          {/* Download card */}
+          <div className="rd-sidebar-card">
+            <button
+              className="btn-primary rd-download-btn"
+              onClick={handleDownload}
+              disabled={downloading}
+            >
+              {downloading ? <Loader size={16} className="spinner" /> : <Download size={16} />}
+              {downloading ? 'Downloading...' : 'Download'}
+            </button>
+
+            <div className="rd-stats">
+              <div className="rd-stat-row">
+                <Download size={14} />
+                <span>{resource.download_count || 0} downloads</span>
+              </div>
+              <div className="rd-stat-row">
+                <Star size={14} />
+                <span>{resource.avg_rating > 0 ? `${resource.avg_rating.toFixed(1)} rating` : 'No ratings yet'}</span>
+              </div>
+              <div className="rd-stat-row">
+                <HardDrive size={14} />
+                <span>{formatFileSize(resource.file_size)}</span>
+              </div>
+              <div className="rd-stat-row">
+                <Calendar size={14} />
+                <span>{new Date(resource.created_at).toLocaleDateString()}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Meta info */}
+          <div className="rd-sidebar-card">
+            <h4>Details</h4>
+            <div className="rd-meta-list">
+              <div className="rd-meta-item">
+                <span className="rd-meta-label">Subject</span>
+                <span className="rd-meta-value">{resource.subject}</span>
+              </div>
+              <div className="rd-meta-item">
+                <span className="rd-meta-label">Semester</span>
+                <span className="rd-meta-value">{resource.semester}</span>
+              </div>
+              <div className="rd-meta-item">
+                <span className="rd-meta-label">Year</span>
+                <span className="rd-meta-value">{resource.year}</span>
+              </div>
+              <div className="rd-meta-item">
+                <span className="rd-meta-label">File</span>
+                <span className="rd-meta-value">{resource.file_name}</span>
+              </div>
+            </div>
+            {resource.tags?.length > 0 && (
+              <div className="rd-tags">
+                {resource.tags.map(tag => (
+                  <span key={tag} className="rd-tag"><Tag size={10} /> {tag}</span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Uploader card */}
+          {resource.uploader && (
+            <div className="rd-sidebar-card rd-uploader-card">
+              <div className="rd-uploader-avatar">
+                <User size={20} />
+              </div>
+              <div className="rd-uploader-info">
+                <span className="rd-uploader-name">{resource.uploader.name}</span>
+                <span className="rd-uploader-dept">{resource.uploader.department || 'Student'}</span>
+              </div>
+              <div className="rd-uploader-points">
+                <span className="rd-points-value">{resource.uploader.points || 0}</span>
+                <span className="rd-points-label">pts</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+      <style>{rdStyles}</style>
+    </div>
+  )
 }
 
 const rdStyles = `
