@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from './context/AuthContext'
 import Navbar from './components/Navbar'
-import LightPillar from './components/LightPillar'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -17,25 +16,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        {/* Fixed WebGL background */}
-        <div className="light-pillar-bg">
-          <LightPillar
-            topColor="#1a3a8a"
-            bottomColor="#2563eb"
-            intensity={0.35}
-            rotationSpeed={0.15}
-            glowAmount={0.008}
-            pillarWidth={8.0}
-            pillarHeight={0.25}
-            noiseIntensity={0.3}
-            quality="high"
-            mixBlendMode="screen"
-            pillarRotation={-25}
-          />
-        </div>
-
-        {/* App content */}
-        <div style={{ position: 'relative', zIndex: 1 }}>
+        <div className="app-wrapper">
           <Navbar />
           <Toaster
             position="top-right"
