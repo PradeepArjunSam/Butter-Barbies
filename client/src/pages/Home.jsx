@@ -1,111 +1,126 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Search, Upload, Download, ArrowRight, BookOpen, FileText, Users } from 'lucide-react'
+import Prism from '../components/Prism'
 
 export default function Home() {
-    const { isAuthenticated } = useAuth()
+  const { isAuthenticated } = useAuth()
 
-    return (
-        <div className="home-page">
-            {/* Hero */}
-            <section className="hero">
-                <div className="hero-bg" />
-                <div className="hero-content">
-                    <div className="hero-badge">
-                        <span>Built for Yugastra -- Ramaiah University</span>
-                    </div>
-                    <h1>
-                        Your campus resources,
-                        <br />
-                        <span className="gradient-text">all in one place.</span>
-                    </h1>
-                    <p className="hero-desc">
-                        CampusShare is a community-driven platform where students upload, discover,
-                        and download academic resources -- notes, past papers, assignments, and more.
-                    </p>
-                    <div className="hero-actions">
-                        <Link to="/browse" className="btn-primary hero-btn">
-                            Browse Resources
-                            <ArrowRight size={18} />
-                        </Link>
-                        {!isAuthenticated && (
-                            <Link to="/register" className="btn-ghost hero-btn">
-                                Get Started
-                            </Link>
-                        )}
-                    </div>
-                </div>
-            </section>
+  return (
+    <div className="home-page">
+      {/* Hero */}
+      <section className="hero">
+        <div className="hero-prism-bg">
+          <Prism
+            animationType="rotate"
+            glow={0.8}
+            noise={0.4}
+            scale={3.2}
+            hueShift={-0.3}
+            colorFrequency={1.2}
+            bloom={0.8}
+            timeScale={0.3}
+            transparent={true}
+          />
+        </div>
+        <div className="hero-prism-overlay" />
+        <div className="hero-bg" />
+        <div className="hero-content">
+          <div className="hero-badge">
+            <span>Built for Yugastra -- Ramaiah University</span>
+          </div>
+          <h1>
+            Your campus resources,
+            <br />
+            <span className="gradient-text">all in one place.</span>
+          </h1>
+          <p className="hero-desc">
+            CampusShare is a community-driven platform where students upload, discover,
+            and download academic resources -- notes, past papers, assignments, and more.
+          </p>
+          <div className="hero-actions">
+            <Link to="/browse" className="btn-primary hero-btn">
+              Browse Resources
+              <ArrowRight size={18} />
+            </Link>
+            {!isAuthenticated && (
+              <Link to="/register" className="btn-ghost hero-btn">
+                Get Started
+              </Link>
+            )}
+          </div>
+        </div>
+      </section>
 
-            {/* Features */}
-            <section className="features">
-                <div className="features-grid">
-                    <div className="feature-card">
-                        <div className="feature-icon">
-                            <Upload size={24} />
-                        </div>
-                        <h3>Upload Resources</h3>
-                        <p>Share your notes, past papers, and assignments with the campus community.</p>
-                    </div>
-                    <div className="feature-card">
-                        <div className="feature-icon icon-teal">
-                            <Search size={24} />
-                        </div>
-                        <h3>Search and Filter</h3>
-                        <p>Find exactly what you need by subject, semester, type, or keyword.</p>
-                    </div>
-                    <div className="feature-card">
-                        <div className="feature-icon icon-amber">
-                            <Download size={24} />
-                        </div>
-                        <h3>Download Instantly</h3>
-                        <p>Access resources with a single click. No sign-ups, no paywalls for downloads.</p>
-                    </div>
-                </div>
-            </section>
+      {/* Features */}
+      <section className="features">
+        <div className="features-grid">
+          <div className="feature-card">
+            <div className="feature-icon">
+              <Upload size={24} />
+            </div>
+            <h3>Upload Resources</h3>
+            <p>Share your notes, past papers, and assignments with the campus community.</p>
+          </div>
+          <div className="feature-card">
+            <div className="feature-icon icon-teal">
+              <Search size={24} />
+            </div>
+            <h3>Search and Filter</h3>
+            <p>Find exactly what you need by subject, semester, type, or keyword.</p>
+          </div>
+          <div className="feature-card">
+            <div className="feature-icon icon-amber">
+              <Download size={24} />
+            </div>
+            <h3>Download Instantly</h3>
+            <p>Access resources with a single click. No sign-ups, no paywalls for downloads.</p>
+          </div>
+        </div>
+      </section>
 
-            {/* Stats */}
-            <section className="stats-section">
-                <div className="stats-grid">
-                    <div className="stat-block">
-                        <FileText size={28} className="stat-icon" />
-                        <span className="stat-number">500+</span>
-                        <span className="stat-text">Resources Shared</span>
-                    </div>
-                    <div className="stat-block">
-                        <Users size={28} className="stat-icon" />
-                        <span className="stat-number">200+</span>
-                        <span className="stat-text">Active Students</span>
-                    </div>
-                    <div className="stat-block">
-                        <BookOpen size={28} className="stat-icon" />
-                        <span className="stat-number">50+</span>
-                        <span className="stat-text">Subjects Covered</span>
-                    </div>
-                    <div className="stat-block">
-                        <Download size={28} className="stat-icon" />
-                        <span className="stat-number">2,000+</span>
-                        <span className="stat-text">Downloads</span>
-                    </div>
-                </div>
-            </section>
+      {/* Stats */}
+      <section className="stats-section">
+        <div className="stats-grid">
+          <div className="stat-block">
+            <FileText size={28} className="stat-icon" />
+            <span className="stat-number">500+</span>
+            <span className="stat-text">Resources Shared</span>
+          </div>
+          <div className="stat-block">
+            <Users size={28} className="stat-icon" />
+            <span className="stat-number">200+</span>
+            <span className="stat-text">Active Students</span>
+          </div>
+          <div className="stat-block">
+            <BookOpen size={28} className="stat-icon" />
+            <span className="stat-number">50+</span>
+            <span className="stat-text">Subjects Covered</span>
+          </div>
+          <div className="stat-block">
+            <Download size={28} className="stat-icon" />
+            <span className="stat-number">2,000+</span>
+            <span className="stat-text">Downloads</span>
+          </div>
+        </div>
+      </section>
 
-            {/* CTA */}
-            <section className="cta-section">
-                <div className="cta-card">
-                    <h2>Ready to contribute?</h2>
-                    <p>Join the community and start sharing your academic resources today.</p>
-                    <Link
-                        to={isAuthenticated ? '/upload' : '/register'}
-                        className="btn-primary hero-btn"
-                    >
-                        {isAuthenticated ? 'Upload a Resource' : 'Create Account'}
-                        <ArrowRight size={18} />
-                    </Link>
-                </div>
-            </section>
+      {/* CTA */}
+      <section className="cta-section">
+        <div className="cta-card">
+          <h2>Ready to contribute?</h2>
+          <p>Join the community and start sharing your academic resources today.</p>
+          <Link
+            to={isAuthenticated ? '/upload' : '/register'}
+            className="btn-primary hero-btn"
+          >
+            {isAuthenticated ? 'Upload a Resource' : 'Create Account'}
+            <ArrowRight size={18} />
+          </Link>
+        </div>
+      </section>
 
-            <style>{`
+      <style>{`
         .home-page {
           padding-top: 64px;
         }
@@ -129,8 +144,31 @@ export default function Home() {
             radial-gradient(ellipse at 50% 80%, rgba(108,92,231,0.08) 0%, transparent 50%);
           pointer-events: none;
         }
+        .hero-prism-bg {
+          position: absolute;
+          inset: 0;
+          z-index: 0;
+          opacity: 0.35;
+        }
+        .hero-prism-overlay {
+          position: absolute;
+          inset: 0;
+          z-index: 1;
+          background: radial-gradient(ellipse at center, transparent 30%, var(--bg-primary) 75%);
+          pointer-events: none;
+        }
+        .hero-bg {
+          position: absolute;
+          inset: 0;
+          z-index: 2;
+          background:
+            radial-gradient(ellipse at 20% 50%, rgba(108,92,231,0.1) 0%, transparent 50%),
+            radial-gradient(ellipse at 80% 20%, rgba(162,155,254,0.06) 0%, transparent 40%);
+          pointer-events: none;
+        }
         .hero-content {
           position: relative;
+          z-index: 3;
           max-width: 720px;
           text-align: center;
         }
@@ -317,6 +355,6 @@ export default function Home() {
           box-shadow: 0 6px 30px rgba(0,0,0,0.3);
         }
       `}</style>
-        </div>
-    )
+    </div>
+  )
 }
