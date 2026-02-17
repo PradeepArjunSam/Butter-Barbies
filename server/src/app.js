@@ -21,4 +21,10 @@ app.get('/', (req, res) => {
     res.send('Butter Barbies Backend is doing great!');
 });
 
+// Error Handling Middleware (must be last)
+const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+app.use(notFoundHandler);
+app.use(errorHandler);
+
 module.exports = app;
+
