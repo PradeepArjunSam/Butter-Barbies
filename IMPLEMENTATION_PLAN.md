@@ -52,8 +52,10 @@ DATABASE_URL=postgresql://...      (for Prisma)
     name        String
     department  String?
     year        Int?
+    points      Int        @default(0)
     resources   Resource[]
     downloads   Download[]
+    ratings     Rating[]
     createdAt   DateTime   @default(now())
   }
 
@@ -69,10 +71,12 @@ DATABASE_URL=postgresql://...      (for Prisma)
     fileName      String
     fileSize      Int
     downloadCount Int          @default(0)
+    avgRating    Float         @default(0)
     tags          String[]
     uploaderId    String
     uploader      User         @relation(fields: [uploaderId], references: [id])
     downloads     Download[]
+    ratings       Rating[]
     createdAt     DateTime     @default(now())
 
     @@index([subject, semester])
@@ -94,12 +98,27 @@ DATABASE_URL=postgresql://...      (for Prisma)
     PROJECT_REPORT
     ASSIGNMENT
   }
+
+  model Rating {
+    id          String   @id @default(uuid())
+    score       Int      // 1-5
+    userId      String
+    user        User     @relation(fields: [userId], references: [id])
+    resourceId  String
+    resource    Resource @relation(fields: [resourceId], references: [id])
+    createdAt   DateTime @default(now())
+
+    @@unique([userId, resourceId])
+  }
   ```
 - [ ] Run `npx prisma migrate dev --name init`
 - [ ] Enable Supabase Auth (email/password) in Supabase dashboard
 - [ ] Create `supabaseClient.js` for server-side Supabase admin access
 - [ ] Set up Row Level Security (RLS) policies on Supabase tables
-- [ ] Write seed script with 5-10 dummy resources
+- [ ] Create points utility function:
+  - `awardPoints(userId, action)` — handles +10 on upload, +2 on download, +1 on rating
+  - Updates `User.points` in DB
+- [ ] Write seed script with 5-10 dummy resources and varied point values
 
 ### Pradeep (Frontend) — Branch: `feat/fe-auth`
 - [ ] Create `supabaseClient.js` with Supabase browser client
@@ -122,6 +141,7 @@ DATABASE_URL=postgresql://...      (for Prisma)
   - `/upload` — Upload (protected)
   - `/resource/:id` — Resource detail
   - `/profile` — Profile (protected)
+  - `/leaderboard` — Top contributors
 
 ---
 
@@ -144,6 +164,14 @@ DATABASE_URL=postgresql://...      (for Prisma)
   - Insert `Download` record
   - Return signed URL for file download
 - [ ] Create full-text search query on `title`, `description`, `tags`
+- [ ] Create rating system:
+  - POST `/resources/:id/rate` — user submits 1-5 rating
+  - One rating per user per resource (upsert)
+  - Recalculate `avgRating` on resource after each rating
+  - Award +1 point to resource uploader on new rating
+- [ ] Integrate points into upload flow: +10 points on successful upload
+- [ ] Integrate points into download flow: +2 points to uploader on each download
+- [ ] Create GET `/leaderboard` — top 20 users sorted by points
 
 ### Pradeep (Frontend) — Branch: `feat/fe-resources`
 - [ ] Build `Home.jsx` — hero section, featured/recent resources, call-to-action
@@ -160,26 +188,35 @@ DATABASE_URL=postgresql://...      (for Prisma)
   - Calls Supabase Storage + inserts resource record
 - [ ] Build `ResourceDetail.jsx`:
   - Full resource info
-  - Download button (triggers download tracking)
+  - Download button (triggers download tracking + awards points)
+  - Star rating component (1-5 stars, submit rating)
+  - Display average rating
   - PDF preview (if file is PDF) using `<iframe>` or `react-pdf`
-  - Uploader info
+  - Uploader info with their points badge
 
 ---
 
 ## Phase 3 — Profile + Polish (2 hours)
 
 ### Hemant (Backend) — Branch: `feat/be-profile`
-- [ ] Create GET `/users/:id/profile` — user info + their uploaded resources
+- [ ] Create GET `/users/:id/profile` — user info + uploaded resources + total points
 - [ ] Create GET `/users/:id/downloads` — user's download history
-- [ ] Add seed data: 3 users, 10+ resources with varied subjects/semesters
-- [ ] Test all APIs with Postman, fix edge cases
+- [ ] Create GET `/leaderboard` — top contributors sorted by points with rank
+- [ ] Add seed data: 3 users, 10+ resources with varied subjects/semesters/points
+- [ ] Test all APIs including points calculation with Postman, fix edge cases
 - [ ] Set up proper error responses (400, 401, 404, 500)
 
 ### Pradeep (Frontend) — Branch: `feat/fe-profile`
 - [ ] Build `Profile.jsx`:
   - User info card (name, department, year, join date)
+  - Points badge / total points display prominently
   - Tab: "My Uploads" — grid of their uploaded resources
   - Tab: "My Downloads" — list of downloaded resources
+- [ ] Build `Leaderboard.jsx`:
+  - Top contributors ranked by points
+  - Show rank, name, department, points, number of uploads
+  - Highlight top 3 with special styling (gold, silver, bronze)
+- [ ] Build `StarRating.jsx` component — reusable 1-5 star rating input/display
 - [ ] Add loading skeletons / spinners for all data-fetching pages
 - [ ] Add empty states ("No resources found", "Upload your first resource")
 - [ ] Add error toasts/notifications for failed operations
@@ -192,8 +229,9 @@ DATABASE_URL=postgresql://...      (for Prisma)
 
 ### Hemant
 - [ ] Verify all Supabase RLS policies are correct for production
-- [ ] Run seed data on production Supabase DB
-- [ ] Test all flows on production: register, login, upload, browse, download
+- [ ] Verify points calculations work correctly end-to-end
+- [ ] Run seed data on production Supabase DB (include users with varied points for leaderboard)
+- [ ] Test all flows on production: register, login, upload, browse, download, rate, points, leaderboard
 - [ ] Fix any CORS / env variable issues
 
 ### Pradeep
@@ -203,9 +241,11 @@ DATABASE_URL=postgresql://...      (for Prisma)
   - Deploy
 - [ ] Smoke test all pages on live URL
 - [ ] Prepare demo story:
-  1. **Contributor Flow**: Log in as "Priya" -> Upload DS notes -> Resource appears in catalog
-  2. **Seeker Flow**: Log in as "Rahul" -> Search "data structures" -> Filter Sem 4 -> Download
-  3. **Why it matters**: "Resources are no longer siloed. Every student benefits."
+  1. **Contributor Flow**: Log in as "Priya" -> Upload DS notes -> Earns +10 points -> Resource appears in catalog
+  2. **Seeker Flow**: Log in as "Rahul" -> Search "data structures" -> Filter Sem 4 -> Download -> Priya earns +2 points
+  3. **Rating Flow**: Rahul rates notes 5 stars -> Priya earns +1 point -> Show updated profile
+  4. **Leaderboard**: Show leaderboard -> Priya climbs to the top -> Recognition drives more contributions
+  5. **Why it matters**: "Most platforms are one-directional. We built a contribution incentive loop where giving is rewarded."
 
 ---
 
@@ -221,17 +261,21 @@ butter-barbies/
         UploadForm.jsx
         SearchBar.jsx
         FilterBar.jsx
+        StarRating.jsx
+        PointsBadge.jsx
       pages/
         Home.jsx
         Browse.jsx
         ResourceDetail.jsx
         Upload.jsx
         Profile.jsx
+        Leaderboard.jsx
         Login.jsx
         Register.jsx
       hooks/
         useAuth.js
         useResources.js
+        usePoints.js
       context/
         AuthContext.jsx
       lib/
@@ -275,6 +319,7 @@ butter-barbies/
 | File Storage | Supabase Storage | Same platform, free tier, signed URLs for downloads |
 | Frontend Deploy | Vercel | Free, instant deploys from GitHub |
 | Backend | Supabase (serverless) | No separate server to deploy, client SDK handles most things |
+| Points System | Running total on User.points | Simple, no separate ledger needed at hackathon scale |
 
 ---
 

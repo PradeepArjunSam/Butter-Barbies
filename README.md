@@ -6,7 +6,7 @@
 
 **Butter Barbies** is the team behind **CampusShare** — a community-driven academic resource sharing platform built for **Yugastra**, the annual university fest of **Ramaiah University**. This hackathon project tackles the problem of siloed study materials on campus.
 
-Students spend hours hunting for notes, past papers, and solved assignments that already exist somewhere. CampusShare changes that by creating a **trusted, searchable, campus-specific repository** where seekers find what they need — fast.
+Students spend hours hunting for notes, past papers, and solved assignments that already exist somewhere. CampusShare changes that by creating a **trusted, searchable, campus-specific repository** where contributors are recognized and rewarded, and seekers find what they need — fast.
 
 ---
 
@@ -31,9 +31,11 @@ Academic resources on campus are fragmented:
 - Download resources
 - Keyword search
 - Resource detail pages
+- Recognition points & rewards system for contributors
 
 ### Should-Have (High Value)
-- User profile page with upload history
+- User profile page with upload history and points display
+- Contributor leaderboard (top contributors by points)
 - Sort by: newest / most downloaded
 - Preview PDF in-browser
 - File type filter (PDF, DOCX, etc.)
@@ -84,6 +86,25 @@ Academic resources on campus are fragmented:
 |       (Prisma ORM)           |
 +------------------------------+
 ```
+
+---
+
+## Recognition Points & Rewards System
+
+CampusShare incentivizes contributions through a points-based recognition system. The more you share, the more you earn.
+
+| Action                          | Points |
+|--------------------------------|--------|
+| Upload a resource              | +10    |
+| Per download of your resource  | +2     |
+| Per positive rating received   | +1     |
+| Daily login streak (3+ days)   | +3     |
+
+**How it works:**
+- Points are tracked on each user's profile and displayed publicly
+- A **Leaderboard** showcases the top contributors on campus
+- Points accumulate over time, rewarding consistent contributors
+- The system creates a positive feedback loop — contributors upload more because they see recognition
 
 ---
 
